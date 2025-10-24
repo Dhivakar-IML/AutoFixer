@@ -17,6 +17,9 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure Swagger with custom configuration
 builder.Services.AddSwaggerConfiguration();
 
+// Add SignalR for real-time communication
+builder.Services.AddSignalR();
+
 // Add health checks
 builder.Services.AddHealthChecks()
     .AddCheck<MongoDbHealthCheck>("mongodb")
@@ -86,6 +89,9 @@ builder.Services.AddScoped<ITeamsNotificationService, TeamsNotificationService>(
 builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
 builder.Services.AddScoped<IAlertSuppressionService, AlertSuppressionService>();
 
+// Real-time services  
+// builder.Services.AddHostedService<RealTimeDataService>();
+
 // Configure logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -113,6 +119,12 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// Add SignalR hub  
+// app.MapHub<ErrorPatternHub>("/errorPatternHub");
+
+// Add static files for real-time demo
+app.UseStaticFiles();
 
 // Add root endpoint for API information
 app.MapGet("/", () => new
