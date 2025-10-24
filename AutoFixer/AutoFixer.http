@@ -1,0 +1,6 @@
+@AutoFixer_HostAddress = http://localhost:5167
+
+GET {{AutoFixer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
