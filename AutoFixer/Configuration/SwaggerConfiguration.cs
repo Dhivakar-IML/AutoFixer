@@ -262,13 +262,13 @@ public class SwaggerDocumentFilter : IDocumentFilter
             }
         };
 
-        // Add servers information
+        // Add servers information - Local development server first for development
         swaggerDoc.Servers = new List<OpenApiServer>
         {
             new OpenApiServer
             {
-                Url = "https://api.autofixer.com",
-                Description = "Production server"
+                Url = "http://localhost:5000",
+                Description = "Development server (Local)"
             },
             new OpenApiServer
             {
@@ -277,8 +277,8 @@ public class SwaggerDocumentFilter : IDocumentFilter
             },
             new OpenApiServer
             {
-                Url = "http://localhost:5000",
-                Description = "Development server"
+                Url = "https://api.autofixer.com",
+                Description = "Production server"
             }
         };
     }
