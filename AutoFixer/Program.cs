@@ -14,6 +14,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Configure Swagger with custom configuration
 builder.Services.AddSwaggerConfiguration();
 
@@ -78,6 +89,7 @@ builder.Services.AddScoped<ILogIngestionService, LogIngestionService>();
 builder.Services.AddHttpClient<INewRelicLogIngestionService, NewRelicLogIngestionService>();
 builder.Services.AddHttpClient<ISeqLogIngestionService, SeqLogIngestionService>();
 builder.Services.AddScoped<IMongoAuditLogIngestionService, MongoAuditLogIngestionService>();
+builder.Services.AddScoped<MongoLogReaderService>();
 
 // ML services
 builder.Services.AddScoped<ErrorClusteringEngine>();
@@ -104,6 +116,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerConfiguration(app.Environment);
 }
+
+// Enable CORS
+app.UseCors("AllowAll");
 
 // Add health checks endpoint
 app.MapHealthChecks("/health");

@@ -23,17 +23,7 @@ public static class SwaggerConfiguration
                 Title = "AutoFixer API",
                 Version = "v1.0",
                 Description = "Intelligent Error Pattern Detection and Alerting System",
-                Contact = new OpenApiContact
-                {
-                    Name = "AutoFixer Team",
-                    Email = "support@autofixer.com",
-                    Url = new Uri("https://autofixer.com")
-                },
-                License = new OpenApiLicense
-                {
-                    Name = "MIT License",
-                    Url = new Uri("https://opensource.org/licenses/MIT")
-                }
+               
             });
 
             // Include XML comments for better documentation
@@ -92,6 +82,13 @@ public static class SwaggerConfiguration
             app.UseSwagger(options =>
             {
                 options.RouteTemplate = "api-docs/{documentName}/swagger.json";
+                options.PreSerializeFilters.Add((swagger, httpReq) =>
+                {
+                    swagger.Servers = new List<OpenApiServer>
+                    {
+                        new OpenApiServer { Url = $"{httpReq.Scheme}://{httpReq.Host.Value}" }
+                    };
+                });
             });
 
             app.UseSwaggerUI(options =>

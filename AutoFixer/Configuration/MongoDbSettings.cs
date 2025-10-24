@@ -51,4 +51,9 @@ public class MongoDbSettings
     /// Whether to use SSL for connection
     /// </summary>
     public bool UseSsl { get; set; } = false;
+
+    /// <summary>
+    /// Path to MongoDB log file (optional, for log file analysis)
+    /// </summary>
+    public string? LogPath { get; set; } = null;
 }
