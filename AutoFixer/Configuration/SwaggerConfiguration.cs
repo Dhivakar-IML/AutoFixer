@@ -133,32 +133,40 @@ public class SwaggerResponseExamplesFilter : IOperationFilter
         // Add common response examples
         if (operation.Responses.ContainsKey("400"))
         {
-            operation.Responses["400"].Content.Add("application/json", new OpenApiMediaType
+            var response400 = operation.Responses["400"];
+            if (!response400.Content.ContainsKey("application/json"))
             {
-                Example = new OpenApiString("""
+                response400.Content.Add("application/json", new OpenApiMediaType
                 {
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "The request parameters are invalid",
-                  "traceId": "00-1234567890abcdef-1234567890abcdef-01"
-                }
-                """)
-            });
+                    Example = new OpenApiString("""
+                    {
+                      "title": "Bad Request",
+                      "status": 400,
+                      "detail": "The request parameters are invalid",
+                      "traceId": "00-1234567890abcdef-1234567890abcdef-01"
+                    }
+                    """)
+                });
+            }
         }
 
         if (operation.Responses.ContainsKey("500"))
         {
-            operation.Responses["500"].Content.Add("application/json", new OpenApiMediaType
+            var response500 = operation.Responses["500"];
+            if (!response500.Content.ContainsKey("application/json"))
             {
-                Example = new OpenApiString("""
+                response500.Content.Add("application/json", new OpenApiMediaType
                 {
-                  "title": "Internal Server Error",
-                  "status": 500,
-                  "detail": "An unexpected error occurred while processing the request",
-                  "traceId": "00-1234567890abcdef-1234567890abcdef-01"
-                }
-                """)
-            });
+                    Example = new OpenApiString("""
+                    {
+                      "title": "Internal Server Error",
+                      "status": 500,
+                      "detail": "An unexpected error occurred while processing the request",
+                      "traceId": "00-1234567890abcdef-1234567890abcdef-01"
+                    }
+                    """)
+                });
+            }
         }
     }
 }
