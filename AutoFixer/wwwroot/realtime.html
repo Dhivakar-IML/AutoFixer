@@ -197,23 +197,25 @@
         });
 
         connection.on("PatternUpdate", function (data) {
-            addLog(`[Real-Time] New pattern detected: ${data.NewError?.Name || 'Unknown'}`);
-            addLog(`[ML] Analysis type: ${data.AnalysisType}`);
-            addLog(`[ML] Total patterns: ${data.TotalPatterns}`);
+            console.log('PatternUpdate received:', data); // Debug log
+            addLog(`[Real-Time] New pattern detected: ${data.newError?.name || 'Unknown'}`);
+            addLog(`[ML] Analysis type: ${data.analysisType || 'N/A'}`);
+            addLog(`[ML] Total patterns: ${data.totalPatterns || 0}`);
             
-            if (data.HighConfidencePatterns) {
-                updatePatternList(data.HighConfidencePatterns);
-                updateMLStats(data.HighConfidencePatterns);
+            if (data.highConfidencePatterns && data.highConfidencePatterns.length > 0) {
+                updatePatternList(data.highConfidencePatterns);
+                updateMLStats(data.highConfidencePatterns);
             }
             
             document.getElementById('last-update').textContent = 
-                `Last Update: ${new Date(data.Timestamp).toLocaleTimeString()}`;
+                `Last Update: ${new Date(data.timestamp || Date.now()).toLocaleTimeString()}`;
             document.getElementById('processing-mode').textContent = 
                 'Mode: Live Processing';
         });
 
         connection.on("DemoStarted", function (data) {
-            addLog(`[Demo] ${data.Message}`);
+            console.log('DemoStarted received:', data); // Debug log
+            addLog(`[Demo] ${data.message || 'Demo started'}`);
             document.getElementById('processing-mode').textContent = 'Mode: Demo Streaming';
         });
 
@@ -222,18 +224,18 @@
             listEl.innerHTML = '';
             
             patterns.forEach(pattern => {
-                const confidence = pattern.Confidence * 100;
+                const confidence = (pattern.confidence || pattern.Confidence || 0) * 100;
                 const confidenceClass = confidence > 90 ? 'confidence-high' : 
                                        confidence > 75 ? 'confidence-medium' : 'confidence-low';
                 
                 const item = document.createElement('div');
                 item.className = `pattern-item ${confidenceClass}`;
                 item.innerHTML = `
-                    <strong>${pattern.Name}</strong><br>
-                    <small>Category: ${pattern.Category || 'Unknown'} | 
+                    <strong>${pattern.name || pattern.Name || 'Unknown'}</strong><br>
+                    <small>Category: ${pattern.category || pattern.Category || 'Unknown'} | 
                     Confidence: ${confidence.toFixed(1)}% | 
-                    Priority: ${pattern.Priority}</small><br>
-                    <em>${pattern.Description || 'No description'}</em>
+                    Priority: ${pattern.priority || pattern.Priority || 'N/A'}</small><br>
+                    <em>${pattern.description || pattern.Description || 'No description'}</em>
                 `;
                 listEl.appendChild(item);
             });
@@ -241,7 +243,7 @@
 
         function updateMLStats(patterns) {
             if (patterns.length > 0) {
-                const avgConfidence = patterns.reduce((sum, p) => sum + p.Confidence, 0) / patterns.length;
+                const avgConfidence = patterns.reduce((sum, p) => sum + (p.confidence || p.Confidence || 0), 0) / patterns.length;
                 document.getElementById('confidence-score').textContent = 
                     (avgConfidence * 100).toFixed(1) + '%';
             }
@@ -254,12 +256,16 @@
         }
 
         function updateStatus(data) {
-            addLog(`[Status] Total patterns in database: ${data.TotalPatterns}`);
-            addLog(`[Status] Recent patterns (5min): ${data.RecentPatterns}`);
+            console.log('Status data:', data); // Debug log
+            addLog(`[Status] Total patterns in database: ${data.totalPatterns || data.TotalPatterns || 0}`);
+            addLog(`[Status] Recent patterns (5min): ${data.recentPatterns || data.RecentPatterns || 0}`);
             
-            if (data.RecentErrors && data.RecentErrors.length > 0) {
-                data.RecentErrors.forEach(error => {
-                    addLog(`[Recent] ${error.Name} - ${error.Confidence}% confidence`);
+            const recentErrors = data.recentErrors || data.RecentErrors;
+            if (recentErrors && recentErrors.length > 0) {
+                recentErrors.forEach(error => {
+                    const name = error.name || error.Name || 'Unknown';
+                    const confidence = error.confidence || error.Confidence || 0;
+                    addLog(`[Recent] ${name} - ${confidence}% confidence`);
                 });
             }
         }
@@ -281,7 +287,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                addLog(`[Simulation] ${data.Message}`);
+                console.log('Simulate error response:', data); // Debug log
+                addLog(`[Simulation] ${data.message || data.Message || 'Error simulated'}`);
             })
             .catch(err => addLog(`[Error] ${err.toString()}`));
         }
@@ -290,8 +297,9 @@
             fetch('/api/RealTime/stream-demo')
                 .then(response => response.json())
                 .then(data => {
-                    addLog(`[Demo] ${data.Message}`);
-                    addLog(`[Demo] WebSocket endpoint: ${data.WebSocketEndpoint}`);
+                    console.log('Demo data:', data); // Debug log
+                    addLog(`[Demo] ${data.message || data.Message || 'Demo started'}`);
+                    addLog(`[Demo] WebSocket endpoint: ${data.webSocketEndpoint || data.WebSocketEndpoint || '/errorPatternHub'}`);
                 });
         }
 

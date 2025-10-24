@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using AutoFixer.Models;
+using AutoFixer.Hubs;
 
 namespace AutoFixer.Controllers
 {
@@ -8,12 +10,14 @@ namespace AutoFixer.Controllers
     public class RealTimeController : ControllerBase
     {
         private readonly ILogger<RealTimeController> _logger;
+        private readonly IHubContext<ErrorPatternHub> _hubContext;
         private static readonly List<ErrorPattern> _realtimePatterns = new();
         private static readonly Random _random = new();
 
-        public RealTimeController(ILogger<RealTimeController> logger)
+        public RealTimeController(ILogger<RealTimeController> logger, IHubContext<ErrorPatternHub> hubContext)
         {
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         [HttpGet("status")]
@@ -77,6 +81,40 @@ namespace AutoFixer.Controllers
 
                 _logger.LogInformation($"Real-time error simulated: {request.ErrorName} with {newError.Confidence:P1} confidence");
 
+                // Broadcast via SignalR
+                var patternUpdate = new
+                {
+                    NewError = new
+                    {
+                        newError.Name,
+                        newError.Description,
+                        Priority = newError.Priority.ToString(),
+                        Severity = newError.Severity.ToString(),
+                        Confidence = Math.Round(newError.Confidence * 100, 1),
+                        newError.AffectedUsers,
+                        ImpactScore = Math.Round(newError.ImpactScore, 2)
+                    },
+                    AnalysisType = "ML Real-Time TF-IDF + DBSCAN",
+                    TotalPatterns = _realtimePatterns.Count,
+                    Timestamp = DateTime.UtcNow,
+                    HighConfidencePatterns = _realtimePatterns
+                        .Where(p => p.Confidence >= 0.75)
+                        .OrderByDescending(p => p.Confidence)
+                        .Take(5)
+                        .Select(p => new
+                        {
+                            p.Name,
+                            p.Description,
+                            Category = request.Category ?? "General",
+                            Priority = p.Priority.ToString(),
+                            Confidence = p.Confidence
+                        })
+                        .ToList()
+                };
+
+                // Send to all connected clients
+                _hubContext.Clients.All.SendAsync("PatternUpdate", patternUpdate);
+
                 return Ok(new
                 {
                     Success = true,
@@ -97,7 +135,7 @@ namespace AutoFixer.Controllers
         }
 
         [HttpGet("stream-demo")]
-        public IActionResult StartStreamingDemo()
+        public async Task<IActionResult> StartStreamingDemo()
         {
             // Generate some live patterns for demonstration
             var livePatterns = new[]
@@ -110,6 +148,48 @@ namespace AutoFixer.Controllers
             foreach (var pattern in livePatterns)
             {
                 _realtimePatterns.Add(pattern);
+            }
+
+            // Broadcast demo started event
+            await _hubContext.Clients.All.SendAsync("DemoStarted", new
+            {
+                Message = "Real-time streaming demo started - Broadcasting live ML analysis",
+                Timestamp = DateTime.UtcNow
+            });
+
+            // Broadcast each pattern to connected clients
+            foreach (var pattern in livePatterns)
+            {
+                var patternUpdate = new
+                {
+                    NewError = new
+                    {
+                        pattern.Name,
+                        pattern.Description,
+                        Priority = pattern.Priority.ToString(),
+                        Severity = pattern.Severity.ToString(),
+                        Confidence = Math.Round(pattern.Confidence * 100, 1),
+                        pattern.AffectedUsers,
+                        ImpactScore = Math.Round(pattern.ImpactScore, 2)
+                    },
+                    AnalysisType = "ML Real-Time TF-IDF + DBSCAN",
+                    TotalPatterns = _realtimePatterns.Count,
+                    Timestamp = DateTime.UtcNow,
+                    HighConfidencePatterns = livePatterns
+                        .Where(p => p.Confidence >= 0.75)
+                        .OrderByDescending(p => p.Confidence)
+                        .Select(p => new
+                        {
+                            p.Name,
+                            p.Description,
+                            Category = "Demo",
+                            Priority = p.Priority.ToString(),
+                            Confidence = p.Confidence
+                        })
+                        .ToList()
+                };
+
+                await _hubContext.Clients.All.SendAsync("PatternUpdate", patternUpdate);
             }
 
             return Ok(new
@@ -194,6 +274,7 @@ namespace AutoFixer.Controllers
     {
         public string ErrorName { get; set; } = "";
         public string Description { get; set; } = "";
+        public string Category { get; set; } = "General";
         public int Priority { get; set; } = 1; // Medium priority by default
     }
 }
