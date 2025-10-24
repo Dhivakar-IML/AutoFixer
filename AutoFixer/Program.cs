@@ -6,6 +6,7 @@ using AutoFixer.Services;
 using AutoFixer.Services.Interfaces;
 using AutoFixer.Configuration;
 using AutoFixer.Health;
+using AutoFixer.Hubs;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -136,7 +137,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Add SignalR hub  
-// app.MapHub<ErrorPatternHub>("/errorPatternHub");
+app.MapHub<ErrorPatternHub>("/errorPatternHub");
 
 // Add static files for real-time demo
 app.UseStaticFiles();

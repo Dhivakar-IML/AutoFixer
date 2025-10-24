@@ -117,6 +117,7 @@ namespace AutoFixer.Controllers
                 Message = "Real-time streaming demo started with live ML analysis",
                 PatternsGenerated = livePatterns.Length,
                 Status = "Broadcasting live ML results",
+                WebSocketEndpoint = "/errorPatternHub",
                 TotalPatterns = _realtimePatterns.Count,
                 LivePatterns = livePatterns.Select(p => new
                 {
